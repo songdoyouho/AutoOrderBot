@@ -13,11 +13,8 @@ config_logging(logging, logging.DEBUG)
 
 def telegram_bot_sendtext(bot_message):
     bot_token = config.TELEGRAM_API
-    bot_chatID = config.MY_TELEGRAM_ID
     test_tvID = config.TEST_TV_ID
-    # 送訊息給我
-    # send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + bot_chatID + '&parse_mode=Markdown&text=' + bot_message
-    # response = requests.get(send_text)
+
     # 送訊息給群組
     send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + test_tvID + '&parse_mode=Markdown&text=' + bot_message
     response = requests.get(send_text)
@@ -93,6 +90,9 @@ class WhosClient:
             if "msg" in response and response["msg"] == "Unknown error, please check your request or try again later.":
                 telegram_bot_sendtext("幣安 API 有問題，請人工檢查一下！")
 
+            if "msg" in response and response["msg"] == "Internal error; unable to process your request. Please try again.":
+                telegram_bot_sendtext("幣安 API 有問題，請人工檢查一下！")
+
         except ClientError as error:
             logging.error(
                 "Found error. status: {}, error code: {}, error message: {}".format(
@@ -110,8 +110,13 @@ def welcome():
 
 @app.route('/webhook', methods=['POST'])
 def webhook():
+    print("---------------------------- receive a order from TV")
+    print(" ")
+
     # init client
     kai_client = WhosClient(config.API_KEY, config.API_PRIVATE_KEY, 100)
+    import time
+    time.sleep(3)
     su_client = WhosClient(config.SU_API_KEY, config.SU_API_PRIVATE_KEY, 200)
 
     # 從 webhook 拿到 json
@@ -150,10 +155,17 @@ def webhook():
         market_position = 'LONG'
 
     # send the webhook request to telegram bot
+    print("---------------------------- send an order to telegram")
+    print(" ")
     arrange_send_text = 'receive order from server: \n' + 'strategy: ' + strategyName + ' ' + side + ' ' + symbol + ' at ' + str(price) + ' quantity:' + str(quantity) + '\n' + 'prev market position: ' + prev_market_position + '\n' + 'prev market position size: ' + str(prev_market_position_size)
     telegram_bot_sendtext(arrange_send_text)
 
+    print("---------------------------- order kai's trade")
+    print(" ")
     order_response = kai_client.order(symbol, side, quantity, market_position)
+
+    print("---------------------------- order su's trade")
+    print(" ")
     order_response = su_client.order(symbol, side, quantity, market_position)
 
     if order_response:
