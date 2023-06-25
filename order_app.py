@@ -14,9 +14,10 @@ config_logging(logging, logging.DEBUG)
 def telegram_bot_sendtext(bot_message):
     bot_token = config.TELEGRAM_API
     test_tvID = config.TEST_TV_ID
+    MY_TELEGRAM_ID = config.MY_TELEGRAM_ID
 
     # 送訊息給群組
-    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + test_tvID + '&parse_mode=Markdown&text=' + bot_message
+    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + MY_TELEGRAM_ID + '&parse_mode=Markdown&text=' + bot_message
     response = requests.get(send_text)
 
     return response.json()
@@ -58,8 +59,6 @@ class WhosClient:
         return
 
     def order(self, symbol, side, quantity, position_side):
-        print('quantity:', quantity, float(round(quantity/self.ratio, 1)))
-
         if symbol == 'BTCUSDT' or symbol == 'ETHUSDT' or symbol == 'BNBUSDT':
             new_quantity = float(round(quantity/self.ratio, 3))
 
@@ -72,11 +71,15 @@ class WhosClient:
         # self.change_margin_type(symbol, default_marginType)
         # self.change_leverage(symbol, default_leverage)
 
-        print(symbol, side, new_quantity, position_side)
+        print("pair: ", symbol)
+        print('receive quantity:', quantity)
+        print("order quantity: ", new_quantity)
+        print("side: ", position_side)
+        print("---------------------------- end trade")
+        print(" ")
 
         response = None
         try:
-            logging.info(new_quantity)
             response = self.um_futures_client.new_order(
                 symbol=symbol,
                 side=side,
@@ -86,19 +89,23 @@ class WhosClient:
             )
             logging.info(response)
 
-            # 檢查 response 是不是有問題
-            if "msg" in response and response["msg"] == "Unknown error, please check your request or try again later.":
-                telegram_bot_sendtext("幣安 API 有問題，請人工檢查一下！")
-
-            if "msg" in response and response["msg"] == "Internal error; unable to process your request. Please try again.":
-                telegram_bot_sendtext("幣安 API 有問題，請人工檢查一下！")
-
         except ClientError as error:
             logging.error(
                 "Found error. status: {}, error code: {}, error message: {}".format(
                     error.status_code, error.error_code, error.error_message
                 )
             )
+
+            if error.error_message == "ReduceOnly Order is rejected.":
+                telegram_bot_sendtext("幣安 API 有問題，請人工檢查一下！")
+
+            if error.error_message == "Internal error; unable to process your request. Please try again.":
+                telegram_bot_sendtext("幣安 API 有問題，請人工檢查一下！")
+
+            if error.error_message == "Unknown error, please check your request or try again later.":
+                telegram_bot_sendtext("幣安 API 有問題，請人工檢查一下！")
+
+            return error
 
         return response
 
@@ -164,23 +171,11 @@ def webhook():
     print(" ")
     order_response = kai_client.order(symbol, side, quantity, market_position)
 
-    print("---------------------------- order su's trade")
-    print(" ")
-    order_response = su_client.order(symbol, side, quantity, market_position)
+    # print("---------------------------- order su's trade")
+    # print(" ")
+    # order_response = su_client.order(symbol, side, quantity, market_position)
 
-    if order_response:
-        return {
-            "code": "success",
-            "message": "order executed"
-        }
-    else:
-        print("order failed")
-
-        return {
-            "code": "error",
-            "message": "order failed",
-            "input_message": data
-        }
+    # 待新增判斷式，確認 order 有被正確接收
 
 if __name__ == '__main__':
 	app.debug = True
