@@ -5,9 +5,10 @@ import logging
 from binance.um_futures import UMFutures
 from binance.lib.utils import config_logging
 from binance.error import ClientError
+import time
 
 default_marginType = 'ISOLATED'
-default_leverage = 5
+default_leverage = 2
 
 config_logging(logging, logging.DEBUG)
 
@@ -17,7 +18,7 @@ def telegram_bot_sendtext(bot_message):
     MY_TELEGRAM_ID = config.MY_TELEGRAM_ID
 
     # 送訊息給群組
-    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + MY_TELEGRAM_ID + '&parse_mode=Markdown&text=' + bot_message
+    send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + test_tvID + '&parse_mode=Markdown&text=' + bot_message
     response = requests.get(send_text)
 
     return response.json()
@@ -121,10 +122,7 @@ def webhook():
     print(" ")
 
     # init client
-    kai_client = WhosClient(config.API_KEY, config.API_PRIVATE_KEY, 100)
-    import time
-    time.sleep(3)
-    su_client = WhosClient(config.SU_API_KEY, config.SU_API_PRIVATE_KEY, 200)
+    kai_client = WhosClient(config.API_KEY, config.API_PRIVATE_KEY, 100) # API_KEY API_PRIVATE_KEY 你的投入資金(U)
 
     # 從 webhook 拿到 json
     try:
@@ -171,11 +169,20 @@ def webhook():
     print(" ")
     order_response = kai_client.order(symbol, side, quantity, market_position)
 
-    # print("---------------------------- order su's trade")
-    # print(" ")
-    # order_response = su_client.order(symbol, side, quantity, market_position)
-
     # 待新增判斷式，確認 order 有被正確接收
+    if order_response:
+        return {
+            "code": "success",
+            "message": "order executed"
+        }
+    else:
+        print("order failed")
+
+        return {
+            "code": "error",
+            "message": "order failed",
+            "input_message": data
+        }
 
 if __name__ == '__main__':
 	app.debug = True
