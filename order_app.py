@@ -8,7 +8,7 @@ from binance.error import ClientError
 import time
 
 default_marginType = 'ISOLATED'
-default_leverage = 2
+default_leverage = 10
 
 config_logging(logging, logging.DEBUG)
 
@@ -70,7 +70,7 @@ class WhosClient:
             new_quantity = float(round(quantity/self.ratio))
 
         # self.change_margin_type(symbol, default_marginType)
-        # self.change_leverage(symbol, default_leverage)
+        self.change_leverage(symbol, default_leverage)
 
         print("pair: ", symbol)
         print('receive quantity:', quantity)
@@ -120,6 +120,22 @@ def welcome():
 def webhook():
     print("---------------------------- receive a order from TV")
     print(" ")
+    import subprocess
+    # 要執行的命令
+    command = "w32tm /resync"
+    try:
+        # 使用subprocess執行命令
+        result = subprocess.run(command, shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+
+        # 檢查命令是否成功執行
+        if result.returncode == 0:
+            print("命令成功執行:")
+            print(result.stdout)
+        else:
+            print("命令執行出錯:")
+            print(result.stderr)
+    except Exception as e:
+        print("執行命令時發生異常:", str(e))
 
     # init client
     kai_client = WhosClient(config.API_KEY, config.API_PRIVATE_KEY, 100) # API_KEY API_PRIVATE_KEY 你的投入資金(U)
