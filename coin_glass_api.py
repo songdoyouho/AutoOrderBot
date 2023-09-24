@@ -1,7 +1,13 @@
 import json
 import time
+import datetime
 import requests
 from binance_api import BinanceAPI
+import progressbar
+
+total_iterations = 100
+bar = progressbar.ProgressBar(maxval=total_iterations,
+                              widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
 
 class CoinglassAPI():
     def __init__(self) -> None:
@@ -82,19 +88,54 @@ class CoinglassAPI():
         # print(response.text)
         return json.loads(response.text)
 
+class DetermineTOPN():
+    def __init__(self):
+        self.last_top_N_usdt_pair_names = None
+        self.last_top_200_usdt_pair_names = None
+
+    def compare_with_last_time(self, top_N_usdt_pair_names, top_200_usdt_pair_names):
+        # 跟上次的結果比較多了哪些新幣
+        if self.last_top_N_usdt_pair_names == None:
+            self.last_top_N_usdt_pair_names = top_N_usdt_pair_names
+            self.last_top_200_usdt_pair_names = top_200_usdt_pair_names
+        else:
+            # 比較舊的跟新的多了那些 pair
+            for i in range(len(top_N_usdt_pair_names)):
+                pair = top_N_usdt_pair_names[i]
+                if pair not in self.last_top_N_usdt_pair_names:
+                    print("這次新增: ", pair, " 是第 ", i, " 名")
+                    last_index = self.last_top_200_usdt_pair_names.index(pair)
+                    print(pair, "在上一輪是第", last_index, "名")
+            print("\n")
+            self.last_top_N_usdt_pair_names = top_N_usdt_pair_names
+            self.last_top_200_usdt_pair_names = top_200_usdt_pair_names
+
+
 if __name__ == "__main__":
     coinglass_api = CoinglassAPI()
     binance_api = BinanceAPI()
+    determine_top_100 = DetermineTOPN()
+    determine_top_50 = DetermineTOPN()
+    determine_top_25 = DetermineTOPN()
+    determine_top_10 = DetermineTOPN()
     
-    last_top_100_usdt_pair_names = None
-
     # 主要的 while 迴圈
     while True:
         current_time = time.localtime()
         
         # 檢查分鐘是否是五的倍數
         if current_time.tm_min % 5 == 0:
-            top_100_usdt_pairs, top_100_usdt_pair_names, top_100_usdt_pair_volume = binance_api.get_top_100_pairs()
+            # 拿幣安現貨成交量前N名的資料
+            top_200_usdt_pairs, top_200_usdt_pair_names, top_200_usdt_pair_volume = binance_api.get_top_200_pairs()
+            
+            top_100_usdt_pairs = top_200_usdt_pairs[:100]
+            top_100_usdt_pair_names = top_200_usdt_pair_names[:100]
+            top_100_usdt_pair_volume = top_200_usdt_pair_volume[:100]
+
+            # 拿這些幣的合約資料
+            top_100_usdt_pair_informations = {}
+            print("get top 100 usdt pairs...")
+            bar.start()
             for i in range(len(top_100_usdt_pair_names)):
                 pair = top_100_usdt_pair_names[i]
                 volume = top_100_usdt_pair_volume[i]
@@ -112,37 +153,53 @@ if __name__ == "__main__":
                     funding_rate = coin_informations['fundingRate']
                     open_interest = coin_informations['openInterestAmount']
                     # print(price, funding_rate, open_interest, volume)
+
+                    top_100_usdt_pair_informations[pair] = {
+                        'volume': volume,
+                        'price': price,
+                        'funding_rate': funding_rate,
+                        'open_interest': open_interest
+                    }
                 except:
+                    top_100_usdt_pair_informations[pair] = {
+                        'volume': None,
+                        'price': None,
+                        'funding_rate': None,
+                        'open_interest': None
+                    }
                     pass
                     # print("this coin don't have perpetual market.")
 
-            if last_top_100_usdt_pair_names == None:
-                last_top_100_usdt_pair_names = top_100_usdt_pair_names
-            else:
-                # 比較舊的跟新的多了那些 pair
-                import datetime
+                bar.update(i + 1)
+            bar.finish()
 
-                # 獲取當前時間
-                current_time = datetime.datetime.now()
+            top_50_usdt_pair_names = top_100_usdt_pair_names[:50]
+            top_25_usdt_pair_names = top_100_usdt_pair_names[:25]
+            top_10_usdt_pair_names = top_100_usdt_pair_names[:10]
+            # 獲取當前時間
+            current_time = datetime.datetime.now()
+            # 提取年、月、日、小時和分鐘
+            year = current_time.year
+            month = current_time.month
+            day = current_time.day
+            hour = current_time.hour
+            minute = current_time.minute
+            # 印出年、月、日、小時和分鐘在同一行
+            print(f"{year}年 {month}月 {day}日 {hour}：{minute}")
+            
+            # 輸出得到的資料
+            json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '.json'
+            with open(json_filename, "w") as json_file:
+                json.dump(top_100_usdt_pair_informations, json_file, indent=4)
 
-                # 提取年、月、日、小時和分鐘
-                year = current_time.year
-                month = current_time.month
-                day = current_time.day
-                hour = current_time.hour
-                minute = current_time.minute
-
-                # 印出年、月、日、小時和分鐘在同一行
-                print("更新!!!")
-                print(f"年：{year}, 月：{month}, 日：{day}, 小時：{hour}, 分鐘：{minute}")
-
-                for i in range(len(top_100_usdt_pair_names)):
-                    pair = top_100_usdt_pair_names[i]
-                    if pair not in last_top_100_usdt_pair_names:
-                        print("這次新增: ", pair, " 是第 ", i, " 名")
-
-                print("\n")
-                last_top_100_usdt_pair_names = top_100_usdt_pair_names
+            print("前 100 名 -> ")
+            determine_top_100.compare_with_last_time(top_100_usdt_pair_names, top_200_usdt_pair_names)
+            print("前 50 名 -> ")
+            determine_top_50.compare_with_last_time(top_50_usdt_pair_names, top_200_usdt_pair_names)
+            print("前 25 名 -> ")
+            determine_top_25.compare_with_last_time(top_25_usdt_pair_names, top_200_usdt_pair_names)
+            print("前 10 名 -> ")
+            determine_top_10.compare_with_last_time(top_10_usdt_pair_names, top_200_usdt_pair_names)
 
         # 等待一分鐘，避免無限迴圈過於頻繁
         time.sleep(60)
