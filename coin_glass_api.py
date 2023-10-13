@@ -124,13 +124,14 @@ if __name__ == "__main__":
         current_time = time.localtime()
         
         # 檢查分鐘是否是五的倍數
-        if current_time.tm_min % 5 == 0:
+        if current_time.tm_min % 15 == 0:
             # 拿幣安現貨成交量前N名的資料
-            top_200_usdt_pairs, top_200_usdt_pair_names, top_200_usdt_pair_volume = binance_api.get_top_200_pairs()
+            top_200_usdt_pairs, top_200_usdt_pair_names, top_200_usdt_pair_volume, top_200_usdt_pair_pricechangepercent = binance_api.get_top_200_futures_pairs()
             
             top_100_usdt_pairs = top_200_usdt_pairs[:100]
             top_100_usdt_pair_names = top_200_usdt_pair_names[:100]
             top_100_usdt_pair_volume = top_200_usdt_pair_volume[:100]
+            top_100_usdt_pair_pricechangepercent = top_200_usdt_pair_pricechangepercent[:100]
 
             # 拿這些幣的合約資料
             top_100_usdt_pair_informations = {}
@@ -139,7 +140,8 @@ if __name__ == "__main__":
             for i in range(len(top_100_usdt_pair_names)):
                 pair = top_100_usdt_pair_names[i]
                 volume = top_100_usdt_pair_volume[i]
-                # print(pair)
+                pricechangepercent = top_100_usdt_pair_pricechangepercent[i]
+
                 main_coin = pair.replace("USDT", "")
                 base_coin = "USDT"
                 
@@ -149,24 +151,27 @@ if __name__ == "__main__":
                 # print(perpetual_market['data'][main_coin][0])
                 try: 
                     coin_informations = perpetual_market['data'][main_coin][0]
-                    price = coin_informations['price']
-                    funding_rate = coin_informations['fundingRate']
-                    open_interest = coin_informations['openInterestAmount']
+                    top_100_usdt_pair_informations[pair] = coin_informations
+                    # price = coin_informations['price']
+                    # funding_rate = coin_informations['fundingRate']
+                    # open_interest = coin_informations['openInterestAmount']
                     # print(price, funding_rate, open_interest, volume)
 
-                    top_100_usdt_pair_informations[pair] = {
-                        'volume': volume,
-                        'price': price,
-                        'funding_rate': funding_rate,
-                        'open_interest': open_interest
-                    }
+                    # top_100_usdt_pair_informations[pair] = {
+                    #     'volume': volume,
+                    #     'price': price,
+                    #     'funding_rate': funding_rate,
+                    #     'open_interest': open_interest,
+                    #     'pricechangepercent': pricechangepercent,
+                    # }
                 except:
-                    top_100_usdt_pair_informations[pair] = {
-                        'volume': None,
-                        'price': None,
-                        'funding_rate': None,
-                        'open_interest': None
-                    }
+                    # top_100_usdt_pair_informations[pair] = {
+                    #     'volume': None,
+                    #     'price': None,
+                    #     'funding_rate': None,
+                    #     'open_interest': None,
+                    #     'pricechangepercent': None,
+                    # }
                     pass
                     # print("this coin don't have perpetual market.")
 
@@ -188,9 +193,13 @@ if __name__ == "__main__":
             print(f"{year}年 {month}月 {day}日 {hour}：{minute}")
             
             # 輸出得到的資料
-            json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '.json'
-            with open(json_filename, "w") as json_file:
+            perp_json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_perpetual.json'
+            with open(perp_json_filename, "w") as json_file:
                 json.dump(top_100_usdt_pair_informations, json_file, indent=4)
+
+            binance_json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_binance.json'
+            with open(binance_json_filename, "w") as json_file:
+                json.dump(top_200_usdt_pairs, json_file, indent=4)
 
             print("前 100 名 -> ")
             determine_top_100.compare_with_last_time(top_100_usdt_pair_names, top_200_usdt_pair_names)
@@ -202,4 +211,4 @@ if __name__ == "__main__":
             determine_top_10.compare_with_last_time(top_10_usdt_pair_names, top_200_usdt_pair_names)
 
         # 等待一分鐘，避免無限迴圈過於頻繁
-        time.sleep(60)
+        time.sleep(30)

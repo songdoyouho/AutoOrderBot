@@ -6,6 +6,7 @@ from binance.um_futures import UMFutures
 from binance.lib.utils import config_logging
 from binance.error import ClientError
 import time
+import subprocess
 
 default_marginType = 'ISOLATED'
 default_leverage = 10
@@ -120,7 +121,7 @@ def welcome():
 def webhook():
     print("---------------------------- receive a order from TV")
     print(" ")
-    import subprocess
+
     # 要執行的命令
     command = "w32tm /resync"
     try:
