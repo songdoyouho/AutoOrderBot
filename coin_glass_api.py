@@ -4,6 +4,7 @@ import datetime
 import requests
 from binance_api import BinanceAPI
 import progressbar
+import config
 
 total_iterations = 100
 bar = progressbar.ProgressBar(maxval=total_iterations,
@@ -15,32 +16,6 @@ class CoinglassAPI():
             "accept": "application/json",
             "coinglassSecret": "7160da0a0363452eb37f029dada93013"
         }
-
-    def get_instrument(self) -> dict:
-        """ response data structure
-        {
-            "code": "0",
-            "msg": "success",
-            "data": {
-                "Binance": [
-                {
-                    "instrumentId": "BTCUSD_PERP",
-                    "baseAsset": "BTC",
-                    "quoteAsset": "USD"
-                },
-                {
-                    "instrumentId": "BTCUSD_230929",
-                    "baseAsset": "BTC",
-                    "quoteAsset": "USD"
-                },......]
-            },
-                "Bingx": [....],
-            "success": "True"
-        }
-        """
-        instrument_url = "https://open-api.coinglass.com/public/v2/instrument"
-        response = requests.get(instrument_url, headers=self.headers)
-        return json.loads(response.text)
     
     def get_perpetual_market(self, symbol) -> dict:
         """
@@ -84,7 +59,11 @@ class CoinglassAPI():
         }
         """
         url = "https://open-api.coinglass.com/public/v2/perpetual_market?symbol=" + symbol
-        response = requests.get(url, headers=self.headers)
+        try:
+            response = requests.get(url, headers=self.headers)
+        except:
+            print("Could not get response from ", symbol)
+            return None
         # print(response.text)
         return json.loads(response.text)
 
@@ -106,9 +85,20 @@ class DetermineTOPN():
                     print("這次新增: ", pair, " 是第 ", i, " 名")
                     last_index = self.last_top_200_usdt_pair_names.index(pair)
                     print(pair, "在上一輪是第", last_index, "名")
+                    self.telegram_bot_sendtext("這次新增: " + pair + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名")
             print("\n")
             self.last_top_N_usdt_pair_names = top_N_usdt_pair_names
             self.last_top_200_usdt_pair_names = top_200_usdt_pair_names
+
+    def telegram_bot_sendtext(self, bot_message):
+        bot_token = config.TELEGRAM_API
+        MY_TELEGRAM_ID = config.MY_TELEGRAM_ID
+
+        # 送訊息給我
+        send_text = 'https://api.telegram.org/bot' + bot_token + '/sendMessage?chat_id=' + MY_TELEGRAM_ID + '&parse_mode=Markdown&text=' + bot_message
+        response = requests.get(send_text)
+
+        return response.json()
 
 
 if __name__ == "__main__":
@@ -152,26 +142,7 @@ if __name__ == "__main__":
                 try: 
                     coin_informations = perpetual_market['data'][main_coin][0]
                     top_100_usdt_pair_informations[pair] = coin_informations
-                    # price = coin_informations['price']
-                    # funding_rate = coin_informations['fundingRate']
-                    # open_interest = coin_informations['openInterestAmount']
-                    # print(price, funding_rate, open_interest, volume)
-
-                    # top_100_usdt_pair_informations[pair] = {
-                    #     'volume': volume,
-                    #     'price': price,
-                    #     'funding_rate': funding_rate,
-                    #     'open_interest': open_interest,
-                    #     'pricechangepercent': pricechangepercent,
-                    # }
                 except:
-                    # top_100_usdt_pair_informations[pair] = {
-                    #     'volume': None,
-                    #     'price': None,
-                    #     'funding_rate': None,
-                    #     'open_interest': None,
-                    #     'pricechangepercent': None,
-                    # }
                     pass
                     # print("this coin don't have perpetual market.")
 
