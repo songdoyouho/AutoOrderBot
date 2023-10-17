@@ -45,9 +45,9 @@ class BinanceAPI:
         # 請求的端點
         endpoint = '/ticker/24hr'
         # 發送HTTP GET請求
-        print(f'{self.future_url}{endpoint}')
+        # print(f'{self.future_url}{endpoint}')
         response = requests.get(f'{self.future_url}{endpoint}')
-        print(response)
+        # print(response)
         # 解析JSON回應
         data = response.json()
         # 過濾出以USDT為基底的交易對
