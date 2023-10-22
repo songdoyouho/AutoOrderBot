@@ -70,28 +70,32 @@ class CoinglassAPI():
 class DetermineTOPN():
     def __init__(self):
         self.last_top_N_usdt_pair_names = None
-        self.last_top_200_usdt_pair_names = None
+        self.last_top_250_usdt_pair_names = None
 
-    def compare_with_last_time(self, top_N_usdt_pair_names, top_200_usdt_pair_names):
+    def compare_with_last_time(self, top_N_usdt_pair_names, top_250_usdt_pair_names):
         # 跟上次的結果比較多了哪些新幣
         if self.last_top_N_usdt_pair_names == None:
             self.last_top_N_usdt_pair_names = top_N_usdt_pair_names
-            self.last_top_200_usdt_pair_names = top_200_usdt_pair_names
+            self.last_top_250_usdt_pair_names = top_250_usdt_pair_names
         else:
             # 比較舊的跟新的多了那些 pair
             for i in range(len(top_N_usdt_pair_names)):
                 pair = top_N_usdt_pair_names[i]
                 if pair not in self.last_top_N_usdt_pair_names:
-                    print("這次新增: ", pair, " 是第 ", i, " 名")
-                    last_index = self.last_top_200_usdt_pair_names.index(pair)
-                    print(pair, "在上一輪是第", last_index, "名")
+                    try:
+                        last_index = self.last_top_250_usdt_pair_names.index(pair)
+                        print("這次新增: ", pair, " 是第 ", i, " 名")
+                        print(pair, "在上一輪是第", last_index, "名")
+                    except:
+                        last_index = 999
+                        print("上次不在前 250 名裡，這次是第 ", i, " 名")
                     
                     # 如果上升三名才回報
                     if last_index - i >= 3:
                         telegram_bot_sendtext("這次新增: " + pair + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名")
             print("\n")
             self.last_top_N_usdt_pair_names = top_N_usdt_pair_names
-            self.last_top_200_usdt_pair_names = top_200_usdt_pair_names
+            self.last_top_250_usdt_pair_names = top_250_usdt_pair_names
 
 def telegram_bot_sendtext(bot_message):
     bot_token = config.TELEGRAM_API
@@ -103,54 +107,86 @@ def telegram_bot_sendtext(bot_message):
 
     return response.json()
 
-def analyze_funding_rate_and_report(top_100_usdt_pair_informations):
-    for key in top_100_usdt_pair_informations.keys():
-        funding_rate = top_100_usdt_pair_informations[key]["fundingRate"]
-        
-        if funding_rate <= -1.5 or funding_rate >= 1:
-            # 回報資金費率異常的幣種
-            telegram_bot_sendtext("發現" + key + "資金費率異常，資金費率為：" + str(funding_rate))
+class FundingRate():
+    def __init__(self):
+        self.strange_funding_rate_list = []
+
+    def analyze_funding_rate_and_report(self, top_100_usdt_pair_informations):
+        for key in top_100_usdt_pair_informations.keys():
+            funding_rate = top_100_usdt_pair_informations[key]["fundingRate"]
+            
+            # 如果有資金費率異常的幣種
+            if funding_rate <= -1.5 or funding_rate >= 1:
+                # 如果不在觀察清單裡
+                if key not in self.strange_funding_rate_list:
+                    # 回報資金費率異常的幣種
+                    print("strange funding rate: " + key + " / " + str(funding_rate))
+                    telegram_bot_sendtext("strange funding rate: " + key + " / " + str(funding_rate))
+                    self.strange_funding_rate_list.append(key)
+            else:    
+                # 檢察觀察清單裡的幣種，資金費率是不是回到正常水平
+                if key in self.strange_funding_rate_list:
+                    print("funding rate become normal: " + key + " / " + str(funding_rate))
+                    telegram_bot_sendtext("funding rate become normal: " + key + " / " + str(funding_rate))
+                    self.strange_funding_rate_list.remove(key)
 
 
 if __name__ == "__main__":
     coinglass_api = CoinglassAPI()
     binance_api = BinanceAPI()
+    determine_top_200 = DetermineTOPN()
+    determine_top_175 = DetermineTOPN()
+    determine_top_150 = DetermineTOPN()
+    determine_top_125 = DetermineTOPN()
     determine_top_100 = DetermineTOPN()
+    determine_top_75 = DetermineTOPN()
     determine_top_50 = DetermineTOPN()
     determine_top_25 = DetermineTOPN()
-    determine_top_10 = DetermineTOPN()
+    funding_rate = FundingRate()
     
     # 主要的 while 迴圈
     while True:
         current_time = time.localtime()
         
         if current_time.tm_min % 5 == 0:
-            top_200_usdt_pairs, top_200_usdt_pair_names, top_200_usdt_pair_volume, top_200_usdt_pair_pricechangepercent = binance_api.get_top_200_futures_pairs()
+            result = binance_api.get_top_250_futures_pairs()
+            if result is not None:
+                top_250_usdt_pairs, top_250_usdt_pair_names, top_250_usdt_pair_volume, top_250_usdt_pair_pricechangepercent = result
             
-            top_100_usdt_pair_names = top_200_usdt_pair_names[:100]
-            top_100_usdt_pairs = top_200_usdt_pairs[:100]
-            top_50_usdt_pair_names = top_100_usdt_pair_names[:50]
-            top_25_usdt_pair_names = top_100_usdt_pair_names[:25]
-            top_10_usdt_pair_names = top_100_usdt_pair_names[:10]
+            top_175_usdt_pair_names = top_250_usdt_pair_names[:175]
+            top_150_usdt_pair_names = top_250_usdt_pair_names[:150]
+            top_125_usdt_pair_names = top_250_usdt_pair_names[:125]
+            top_100_usdt_pair_names = top_250_usdt_pair_names[:100]
+            top_75_usdt_pair_names = top_250_usdt_pair_names[:75]
+            top_50_usdt_pair_names = top_250_usdt_pair_names[:50]
+            top_25_usdt_pair_names = top_250_usdt_pair_names[:25]
+
             # 跟上一次的結果對比，找出新進榜的 pair 並用 telegram 通知我
+            print("前 200 名 -> ")
+            determine_top_200.compare_with_last_time(top_250_usdt_pair_names, top_250_usdt_pair_names)
+            print("前 175 名 -> ")
+            determine_top_175.compare_with_last_time(top_175_usdt_pair_names, top_250_usdt_pair_names)
+            print("前 150 名 -> ")
+            determine_top_150.compare_with_last_time(top_150_usdt_pair_names, top_250_usdt_pair_names)
+            print("前 125 名 -> ")
+            determine_top_125.compare_with_last_time(top_125_usdt_pair_names, top_250_usdt_pair_names)
             print("前 100 名 -> ")
-            determine_top_100.compare_with_last_time(top_100_usdt_pair_names, top_200_usdt_pair_names)
+            determine_top_100.compare_with_last_time(top_100_usdt_pair_names, top_250_usdt_pair_names)
+            print("前 75 名 -> ")
+            determine_top_75.compare_with_last_time(top_75_usdt_pair_names, top_250_usdt_pair_names)
             print("前 50 名 -> ")
-            determine_top_50.compare_with_last_time(top_50_usdt_pair_names, top_200_usdt_pair_names)
+            determine_top_50.compare_with_last_time(top_50_usdt_pair_names, top_250_usdt_pair_names)
             print("前 25 名 -> ")
-            determine_top_25.compare_with_last_time(top_25_usdt_pair_names, top_200_usdt_pair_names)
-            print("前 10 名 -> ")
-            determine_top_10.compare_with_last_time(top_10_usdt_pair_names, top_200_usdt_pair_names)
+            determine_top_25.compare_with_last_time(top_25_usdt_pair_names, top_250_usdt_pair_names)
 
         # 檢查分鐘是否是 15 的倍數，15 分鐘更新一次
         if current_time.tm_min % 15 == 0:
-            # 拿幣安合約成交量前 200 名的資料
-            top_200_usdt_pairs, top_200_usdt_pair_names, top_200_usdt_pair_volume, top_200_usdt_pair_pricechangepercent = binance_api.get_top_200_futures_pairs()
+            # 拿幣安合約成交量前 250 名的資料
+            top_250_usdt_pairs, top_250_usdt_pair_names, top_250_usdt_pair_volume, top_250_usdt_pair_pricechangepercent = binance_api.get_top_250_futures_pairs()
             
-            # top_100_usdt_pairs = top_200_usdt_pairs[:100]
-            top_100_usdt_pair_names = top_200_usdt_pair_names[:100]
-            # top_100_usdt_pair_volume = top_200_usdt_pair_volume[:100]
-            # top_100_usdt_pair_pricechangepercent = top_200_usdt_pair_pricechangepercent[:100]
+            top_100_usdt_pair_names = top_250_usdt_pair_names[:100]
+            # top_100_usdt_pair_volume = top_250_usdt_pair_volume[:100]
+            # top_100_usdt_pair_pricechangepercent = top_250_usdt_pair_pricechangepercent[:100]
 
             # 拿這些幣的合約資料
             top_100_usdt_pair_informations = {}
@@ -196,10 +232,10 @@ if __name__ == "__main__":
 
             binance_json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_binance.json'
             with open(binance_json_filename, "w") as json_file:
-                json.dump(top_200_usdt_pairs, json_file, indent=4)
+                json.dump(top_250_usdt_pairs, json_file, indent=4)
 
             # 檢查資金費率
-            analyze_funding_rate_and_report(top_100_usdt_pair_informations)
+            funding_rate.analyze_funding_rate_and_report(top_100_usdt_pair_informations)
 
         # 等待 30 秒，避免無限迴圈過於頻繁
         time.sleep(30)
