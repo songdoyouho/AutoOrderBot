@@ -197,7 +197,7 @@ if __name__ == "__main__":
             # top_100_usdt_pair_pricechangepercent = top_250_usdt_pair_pricechangepercent[:100]
 
             # 拿這些幣的合約資料
-            top_100_usdt_pair_informations = {}
+            top_100_usdt_pair_informations = {} 
             print("get top 100 usdt pairs...")
             bar.start()
             for i in range(len(top_100_usdt_pair_names)):
