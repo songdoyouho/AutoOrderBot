@@ -68,7 +68,8 @@ class CoinglassAPI():
         return json.loads(response.text)
 
 class DetermineTOPN():
-    def __init__(self):
+    def __init__(self, futures_or_not):
+        self.futures_or_not = futures_or_not
         self.last_top_N_usdt_pair_names = None
         self.last_top_250_usdt_pair_names = None
 
@@ -95,6 +96,34 @@ class DetermineTOPN():
                         telegram_bot_sendtext("這次新增: " + pair + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名")
             print("\n")
             self.last_top_N_usdt_pair_names = top_N_usdt_pair_names
+            self.last_top_250_usdt_pair_names = top_250_usdt_pair_names
+
+    def compare(self, top_250_usdt_pair_names):
+        if self.last_top_250_usdt_pair_names == None:
+            self.last_top_250_usdt_pair_names = top_250_usdt_pair_names
+        else:
+            for i in range(len(top_250_usdt_pair_names)):
+                if top_250_usdt_pair_names[i] in self.last_top_250_usdt_pair_names:
+                    # 比較上升了幾名
+                    last_index = self.last_top_250_usdt_pair_names.index(top_250_usdt_pair_names[i])
+                    if last_index - i >= 3:
+                        if self.futures_or_not:
+                            telegram_bot_sendtext("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+                            print("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+                        else:
+                            telegram_bot_sendtext("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+                            print("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+
+                else:
+                    # 表示是新進榜的
+                    last_index = 999
+                    if self.futures_or_not:
+                        telegram_bot_sendtext("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+                        print("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+                    else:
+                        telegram_bot_sendtext("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+                        print("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+
             self.last_top_250_usdt_pair_names = top_250_usdt_pair_names
 
 def telegram_bot_sendtext(bot_message):
@@ -134,14 +163,10 @@ class FundingRate():
 if __name__ == "__main__":
     coinglass_api = CoinglassAPI()
     binance_api = BinanceAPI()
-    determine_top_200 = DetermineTOPN()
-    determine_top_175 = DetermineTOPN()
-    determine_top_150 = DetermineTOPN()
-    determine_top_125 = DetermineTOPN()
-    determine_top_100 = DetermineTOPN()
-    determine_top_75 = DetermineTOPN()
-    determine_top_50 = DetermineTOPN()
-    determine_top_25 = DetermineTOPN()
+
+    determine_top_250 = DetermineTOPN(False)
+    determine_top_250_futures = DetermineTOPN(True)
+
     funding_rate = FundingRate()
     
     # 主要的 while 迴圈
@@ -149,35 +174,18 @@ if __name__ == "__main__":
         current_time = time.localtime()
         
         if current_time.tm_min % 5 == 0:
+            print("------------------------check top 250  ------------------------")
+            result = binance_api.get_top_250_pairs()
+            if result is not None:
+                _, top_250_usdt_pair_names, _, _ = result
+                determine_top_250.compare(top_250_usdt_pair_names)
+
+
+            print("------------------------check top 250 futures ------------------------")
             result = binance_api.get_top_250_futures_pairs()
             if result is not None:
-                top_250_usdt_pairs, top_250_usdt_pair_names, top_250_usdt_pair_volume, top_250_usdt_pair_pricechangepercent = result
-            
-            top_175_usdt_pair_names = top_250_usdt_pair_names[:175]
-            top_150_usdt_pair_names = top_250_usdt_pair_names[:150]
-            top_125_usdt_pair_names = top_250_usdt_pair_names[:125]
-            top_100_usdt_pair_names = top_250_usdt_pair_names[:100]
-            top_75_usdt_pair_names = top_250_usdt_pair_names[:75]
-            top_50_usdt_pair_names = top_250_usdt_pair_names[:50]
-            top_25_usdt_pair_names = top_250_usdt_pair_names[:25]
-
-            # 跟上一次的結果對比，找出新進榜的 pair 並用 telegram 通知我
-            print("前 200 名 -> ")
-            determine_top_200.compare_with_last_time(top_250_usdt_pair_names, top_250_usdt_pair_names)
-            print("前 175 名 -> ")
-            determine_top_175.compare_with_last_time(top_175_usdt_pair_names, top_250_usdt_pair_names)
-            print("前 150 名 -> ")
-            determine_top_150.compare_with_last_time(top_150_usdt_pair_names, top_250_usdt_pair_names)
-            print("前 125 名 -> ")
-            determine_top_125.compare_with_last_time(top_125_usdt_pair_names, top_250_usdt_pair_names)
-            print("前 100 名 -> ")
-            determine_top_100.compare_with_last_time(top_100_usdt_pair_names, top_250_usdt_pair_names)
-            print("前 75 名 -> ")
-            determine_top_75.compare_with_last_time(top_75_usdt_pair_names, top_250_usdt_pair_names)
-            print("前 50 名 -> ")
-            determine_top_50.compare_with_last_time(top_50_usdt_pair_names, top_250_usdt_pair_names)
-            print("前 25 名 -> ")
-            determine_top_25.compare_with_last_time(top_25_usdt_pair_names, top_250_usdt_pair_names)
+                _, top_250_futures_usdt_pair_names, _, _ = result
+                determine_top_250_futures.compare(top_250_futures_usdt_pair_names)
 
         # 檢查分鐘是否是 15 的倍數，15 分鐘更新一次
         if current_time.tm_min % 15 == 0:
