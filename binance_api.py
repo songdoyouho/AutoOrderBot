@@ -24,7 +24,7 @@ class BinanceAPI:
         # 過濾出以USDT為基底的交易對
         usdt_pairs = [pair for pair in data if pair['symbol'].endswith('USDT')]
         # 要排除的穩定幣交易對列表
-        exclude_pairs = ['USDCUSDT', 'FDUSDUSDT', 'BUSDUSDT', 'TUSDUSDT']
+        exclude_pairs = ['USDCUSDT', 'FDUSDUSDT', 'BUSDUSDT', 'TUSDUSDT', 'USDPUSDT']
         # 排除指定的穩定幣交易對
         filtered_usdt_pairs = [pair for pair in usdt_pairs if pair['symbol'] not in exclude_pairs]
         # 根據交易金額（quoteVolume）對交易對進行排序

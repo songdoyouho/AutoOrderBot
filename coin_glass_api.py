@@ -98,7 +98,7 @@ class DetermineTOPN():
             self.last_top_N_usdt_pair_names = top_N_usdt_pair_names
             self.last_top_250_usdt_pair_names = top_250_usdt_pair_names
 
-    def compare(self, top_250_usdt_pair_names):
+    def compare(self, top_250_usdt_pair_names, top_250_usdt_pair_pricechangepercent):
         if self.last_top_250_usdt_pair_names == None:
             self.last_top_250_usdt_pair_names = top_250_usdt_pair_names
         else:
@@ -106,23 +106,23 @@ class DetermineTOPN():
                 if top_250_usdt_pair_names[i] in self.last_top_250_usdt_pair_names:
                     # 比較上升了幾名
                     last_index = self.last_top_250_usdt_pair_names.index(top_250_usdt_pair_names[i])
-                    if last_index - i >= 3:
+                    if last_index - i >= 5:
                         if self.futures_or_not:
-                            telegram_bot_sendtext("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
-                            print("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+                            telegram_bot_sendtext("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名，變動 " + str(top_250_usdt_pair_pricechangepercent[i] + " %"))
+                            print("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名，變動 " + str(top_250_usdt_pair_pricechangepercent[i] + " %"))
                         else:
-                            telegram_bot_sendtext("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
-                            print("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+                            telegram_bot_sendtext("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名，變動 " + str(top_250_usdt_pair_pricechangepercent[i] + " %"))
+                            print("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名，變動 " + str(top_250_usdt_pair_pricechangepercent[i] + " %"))
 
                 else:
                     # 表示是新進榜的
                     last_index = 999
                     if self.futures_or_not:
-                        telegram_bot_sendtext("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
-                        print("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+                        telegram_bot_sendtext("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名，變動 " + str(top_250_usdt_pair_pricechangepercent[i] + " %"))
+                        print("合約部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名，變動" + str(top_250_usdt_pair_pricechangepercent[i] + "%"))
                     else:
-                        telegram_bot_sendtext("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
-                        print("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名")
+                        telegram_bot_sendtext("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名，變動 " + str(top_250_usdt_pair_pricechangepercent[i] + " %"))
+                        print("現貨部分，這次新增: " + top_250_usdt_pair_names[i] + " 是第 " + str(i) + " 名" + "，在上一輪是第" + str(last_index) + "名，上升" + str(last_index - i) + "名，變動 " + str(top_250_usdt_pair_pricechangepercent[i] + " %"))
 
             self.last_top_250_usdt_pair_names = top_250_usdt_pair_names
 
@@ -177,22 +177,19 @@ if __name__ == "__main__":
             print("------------------------check top 250  ------------------------")
             result = binance_api.get_top_250_pairs()
             if result is not None:
-                _, top_250_usdt_pair_names, _, _ = result
-                determine_top_250.compare(top_250_usdt_pair_names)
-
+                top_250_usdt_pairs, top_250_usdt_pair_names, top_250_usdt_pair_volume, top_250_usdt_pair_pricechangepercent = result
+                determine_top_250.compare(top_250_usdt_pair_names, top_250_usdt_pair_pricechangepercent)
 
             print("------------------------check top 250 futures ------------------------")
             result = binance_api.get_top_250_futures_pairs()
             if result is not None:
-                _, top_250_futures_usdt_pair_names, _, _ = result
-                determine_top_250_futures.compare(top_250_futures_usdt_pair_names)
+                top_250_futures_usdt_pairs, top_250_futures_usdt_pair_names, top_250_futures_usdt_pair_volume, top_250_futures_usdt_pair_pricechangepercent = result
+                determine_top_250_futures.compare(top_250_futures_usdt_pair_names, top_250_usdt_pair_pricechangepercent)
 
         # 檢查分鐘是否是 15 的倍數，15 分鐘更新一次
         if current_time.tm_min % 15 == 0:
-            # 拿幣安合約成交量前 250 名的資料
-            top_250_usdt_pairs, top_250_usdt_pair_names, top_250_usdt_pair_volume, top_250_usdt_pair_pricechangepercent = binance_api.get_top_250_futures_pairs()
-            
-            top_100_usdt_pair_names = top_250_usdt_pair_names[:100]
+            # 拿幣安合約成交量前 250 名的資料            
+            top_100_usdt_pair_names = top_250_futures_usdt_pair_names[:100]
             # top_100_usdt_pair_volume = top_250_usdt_pair_volume[:100]
             # top_100_usdt_pair_pricechangepercent = top_250_usdt_pair_pricechangepercent[:100]
 
