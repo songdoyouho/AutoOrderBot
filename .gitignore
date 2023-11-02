@@ -1,0 +1,7 @@
+config.py
+*.exe
+*.zip
+Private_key
+*.drawio
+*__pycache__
+data
