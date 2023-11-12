@@ -180,12 +180,22 @@ if __name__ == "__main__":
             if result is not None:
                 top_300_usdt_pairs, top_300_usdt_pair_names, top_300_usdt_pair_volume, top_300_usdt_pair_pricechangepercent = result
                 determine_top_300.compare(top_300_usdt_pair_names, top_300_usdt_pair_pricechangepercent)
+                for top_300_usdt_name in top_300_usdt_pair_names:
+                    now_volume, avg_volume = binance_api.get_volume_information(top_300_usdt_name)
+                    if now_volume > avg_volume * 10:
+                        telegram_bot_sendtext("現貨成交量大爆射: " + top_300_usdt_name)
+                    time.sleep(0.1)
 
             print("------------------------check top 300 futures ------------------------")
             result = binance_api.get_top_300_futures_pairs()
             if result is not None:
                 top_300_futures_usdt_pairs, top_300_futures_usdt_pair_names, top_300_futures_usdt_pair_volume, top_300_futures_usdt_pair_pricechangepercent = result
                 determine_top_300_futures.compare(top_300_futures_usdt_pair_names, top_300_usdt_pair_pricechangepercent)
+                for top_300_futures_usdt_name in top_300_futures_usdt_pair_names:
+                    now_volume, avg_volume = binance_api.get_volume_information(top_300_futures_usdt_name)
+                    if now_volume > avg_volume * 10:
+                        telegram_bot_sendtext("合約成交量大爆射: " + top_300_usdt_name)
+                    time.sleep(0.1)
 
         # 檢查分鐘是否是 15 的倍數，15 分鐘更新一次
         if current_time.tm_min % 15 == 0:

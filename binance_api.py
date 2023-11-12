@@ -1,6 +1,7 @@
 import requests
 import json
 import config
+import time
 
 class BinanceAPI:
     def __init__(self):
@@ -29,6 +30,8 @@ class BinanceAPI:
         filtered_usdt_pairs = [pair for pair in usdt_pairs if pair['symbol'] not in exclude_pairs]
         # 根據交易金額（quoteVolume）對交易對進行排序
         filtered_usdt_pairs.sort(key=lambda x: float(x['quoteVolume']), reverse=True)
+        # print(len(filtered_usdt_pairs)) 460
+
         # 選擇前300大交易金額的交易對
         top_300_usdt_pairs = filtered_usdt_pairs[:300]
         # 提取交易對的名稱
@@ -71,10 +74,108 @@ class BinanceAPI:
         top_300_usdt_pair_pricechangepercent = [pair['priceChangePercent'] for pair in top_300_usdt_pairs]
 
         return top_300_usdt_pairs, top_300_usdt_pair_names, top_300_usdt_pair_volume, top_300_usdt_pair_pricechangepercent
+    
+    def get_volume_information(self, symbol):
+        ''' 獲取某段時間區間內的 K 棒資料
+            symbol 交易對 BTCUSDT
+            interval 時間區間
+            start_time 開始時間
+            end_time 結束時間
+            limit 回傳上限 default 500 max 1000
+        '''
+        print("processing", symbol)
 
+        interval = '5m'  # 時間間隔，比如1小時
+        start_time = int((time.time() - 87000) * 1000)  # 開始時間，格式需符合ISO 8601，time.time() 是以秒為單位，乘1000轉毫秒
+        end_time = int((time.time() -300) * 1000) # 五分鐘 = 300 秒 
+
+        # 組建 API 請求
+        url = f'https://api.binance.com/api/v3/klines'
+        params = {
+            'symbol': symbol,
+            'interval': interval,
+            'startTime': start_time,
+            'endTime': end_time
+        }
+        headers = {'X-MBX-APIKEY': self.api_key}
+        response = requests.get(url, params=params, headers=headers)
+
+        klines = []
+        now_volume = 0
+        avg_volume = 0
+        # 處理 API 回應
+        if response.status_code == 200:
+            klines = response.json()
+            # print(len(klines))
+            # print(klines[-1])
+        else:
+            print(f'錯誤：{response.status_code}, {response.text}')
+
+        if len(klines) == 289:
+            total_volume = 0
+            for i in range(len(klines)):
+                if i != len(klines) - 1:
+                    total_volume += float(klines[i][7])
+
+            avg_volume = total_volume / (len(klines) - 1)
+            now_volume = float(klines[-1][7])
+            print(avg_volume, now_volume)
+
+        return now_volume, avg_volume
+
+    def get_future_volume_information(self, symbol):
+        ''' 獲取某段時間區間內的 K 棒資料
+            symbol 交易對 BTCUSDT
+            interval 時間區間
+            start_time 開始時間
+            end_time 結束時間
+            limit 回傳上限 default 500 max 1000
+        '''
+        print("processing", symbol)
+
+        interval = '5m'  # 時間間隔，比如1小時
+        start_time = int((time.time() - 87000) * 1000)  # 開始時間，格式需符合ISO 8601，time.time() 是以秒為單位，乘1000轉毫秒
+        end_time = int((time.time() -300) * 1000) # 五分鐘 = 300 秒 
+
+        # 組建 API 請求
+        url = f'https://fapi.binance.com/fapi/v1/klines'
+        params = {
+            'symbol': symbol,
+            'interval': interval,
+            'startTime': start_time,
+            'endTime': end_time
+        }
+        headers = {'X-MBX-APIKEY': self.api_key}
+        response = requests.get(url, params=params, headers=headers)
+
+        klines = []
+        now_volume = 0
+        avg_volume = 0
+        # 處理 API 回應
+        if response.status_code == 200:
+            klines = response.json()
+            # print(len(klines))
+            # print(klines[-1])
+        else:
+            print(f'錯誤：{response.status_code}, {response.text}')
+
+        if len(klines) == 289:
+            total_volume = 0
+            for i in range(len(klines)):
+                if i != len(klines) - 1:
+                    total_volume += float(klines[i][7])
+
+            avg_volume = total_volume / (len(klines) - 1)
+            now_volume = klines[-1][7]
+            print(avg_volume, now_volume)
+        
+        return now_volume, avg_volume
     
 if __name__ == '__main__':
     api = BinanceAPI()
     top_300_usdt_pairs, top_300_usdt_pair_names, top_300_usdt_pair_volume, top_300_usdt_pair_pricechangepercent = api.get_top_300_pairs()
     top_300_usdt_pairs, top_300_usdt_pair_names, top_300_usdt_pair_volume, top_300_usdt_pair_pricechangepercent = api.get_top_300_futures_pairs()
-    print(top_300_usdt_pairs[0])
+    # print(top_300_usdt_pairs[0])
+    # for top_300_usdt_name in top_300_usdt_pair_names[100:]:
+    #     api.get_future_volume_information(top_300_usdt_name)
+    #     time.sleep(0.1)
