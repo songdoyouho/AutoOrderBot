@@ -2,6 +2,14 @@ import requests
 import json
 import config
 import time
+from requests.adapters import HTTPAdapter
+from requests.packages.urllib3.util.retry import Retry
+
+session = requests.Session()
+retry = Retry(total=5, backoff_factor=1, status_forcelist=[500, 502, 503, 504])
+adapter = HTTPAdapter(max_retries=retry)
+session.mount('http://', adapter)
+session.mount('https://', adapter)
 
 class BinanceAPI:
     def __init__(self):
@@ -17,7 +25,7 @@ class BinanceAPI:
         endpoint = '/ticker/24hr'
         # 發送HTTP GET請求
         try:
-            response = requests.get(f'{self.base_url}{endpoint}')
+            response = session.get(f'{self.base_url}{endpoint}')
         except:
             return None
         # 解析JSON回應
@@ -52,7 +60,7 @@ class BinanceAPI:
         endpoint = '/ticker/24hr'
         # 發送HTTP GET請求
         # print(f'{self.future_url}{endpoint}')
-        response = requests.get(f'{self.future_url}{endpoint}')
+        response = session.get(f'{self.future_url}{endpoint}')
         # print(response)
         # 解析JSON回應
         data = response.json()
@@ -98,7 +106,7 @@ class BinanceAPI:
             'endTime': end_time
         }
         headers = {'X-MBX-APIKEY': self.api_key}
-        response = requests.get(url, params=params, headers=headers)
+        response = session.get(url, params=params, headers=headers)
 
         klines = []
         now_volume = 0

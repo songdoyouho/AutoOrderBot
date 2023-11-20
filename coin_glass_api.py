@@ -190,19 +190,17 @@ if __name__ == "__main__":
             result = binance_api.get_top_300_futures_pairs()
             if result is not None:
                 top_300_futures_usdt_pairs, top_300_futures_usdt_pair_names, top_300_futures_usdt_pair_volume, top_300_futures_usdt_pair_pricechangepercent = result
-                determine_top_300_futures.compare(top_300_futures_usdt_pair_names, top_300_usdt_pair_pricechangepercent)
+                determine_top_300_futures.compare(top_300_futures_usdt_pair_names, top_300_futures_usdt_pair_pricechangepercent)
                 for top_300_futures_usdt_name in top_300_futures_usdt_pair_names:
                     now_volume, avg_volume = binance_api.get_volume_information(top_300_futures_usdt_name)
                     if now_volume > avg_volume * 10:
-                        telegram_bot_sendtext("合約成交量大爆射: " + top_300_usdt_name)
+                        telegram_bot_sendtext("合約成交量大爆射: " + top_300_futures_usdt_name)
                     time.sleep(0.1)
 
         # 檢查分鐘是否是 15 的倍數，15 分鐘更新一次
         if current_time.tm_min % 15 == 0:
             # 拿幣安合約成交量前 300 名的資料            
             top_100_usdt_pair_names = top_300_futures_usdt_pair_names[:100]
-            # top_100_usdt_pair_volume = top_300_usdt_pair_volume[:100]
-            # top_100_usdt_pair_pricechangepercent = top_300_usdt_pair_pricechangepercent[:100]
 
             # 拿這些幣的合約資料
             top_100_usdt_pair_informations = {} 
@@ -210,8 +208,6 @@ if __name__ == "__main__":
             bar.start()
             for i in range(len(top_100_usdt_pair_names)):
                 pair = top_100_usdt_pair_names[i]
-                # volume = top_100_usdt_pair_volume[i]
-                # pricechangepercent = top_100_usdt_pair_pricechangepercent[i]
 
                 main_coin = pair.replace("USDT", "")
                 base_coin = "USDT"
@@ -219,13 +215,11 @@ if __name__ == "__main__":
                 # get perpetual market informations
                 perpetual_market = coinglass_api.get_perpetual_market(main_coin)
                 time.sleep(2)
-                # print(perpetual_market['data'][main_coin][0])
                 try: 
                     coin_informations = perpetual_market['data'][main_coin][0]
                     top_100_usdt_pair_informations[pair] = coin_informations
                 except:
                     pass
-                    # print("this coin don't have perpetual market.")
 
                 bar.update(i + 1)
             bar.finish()
