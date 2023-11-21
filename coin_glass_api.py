@@ -173,6 +173,15 @@ if __name__ == "__main__":
     # 主要的 while 迴圈
     while True:
         current_time = time.localtime()
+
+        # 獲取當前時間
+        now_time = datetime.datetime.now()
+        # 提取年、月、日、小時和分鐘
+        year = now_time.year
+        month = now_time.month
+        day = now_time.day
+        hour = now_time.hour
+        minute = now_time.minute
         
         if current_time.tm_min % 5 == 0:
             print("------------------------check top 300  ------------------------")
@@ -180,23 +189,50 @@ if __name__ == "__main__":
             if result is not None:
                 top_300_usdt_pairs, top_300_usdt_pair_names, top_300_usdt_pair_volume, top_300_usdt_pair_pricechangepercent = result
                 determine_top_300.compare(top_300_usdt_pair_names, top_300_usdt_pair_pricechangepercent)
+
+                klines_list = []
                 for top_300_usdt_name in top_300_usdt_pair_names:
-                    now_volume, avg_volume = binance_api.get_volume_information(top_300_usdt_name)
+                    now_volume, avg_volume, klines = binance_api.get_volume_information(top_300_usdt_name)
+                    klines_list.append([top_300_usdt_name, klines])
                     if now_volume > avg_volume * 10:
-                        telegram_bot_sendtext("現貨成交量大爆射: " + top_300_usdt_name)
+                        telegram_bot_sendtext("現貨成交量大爆射: " + top_300_usdt_name, "主動買量:", klines[10])
                     time.sleep(0.1)
+
+                # save klines_list
+                klines_list_filename = "klines/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_spot.json'
+                with open(klines_list_filename, "w") as json_file:
+                    json.dump(klines_list, json_file, indent=4)
 
             print("------------------------check top 300 futures ------------------------")
             result = binance_api.get_top_300_futures_pairs()
             if result is not None:
                 top_300_futures_usdt_pairs, top_300_futures_usdt_pair_names, top_300_futures_usdt_pair_volume, top_300_futures_usdt_pair_pricechangepercent = result
                 determine_top_300_futures.compare(top_300_futures_usdt_pair_names, top_300_futures_usdt_pair_pricechangepercent)
+
+                klines_list = []
                 for top_300_futures_usdt_name in top_300_futures_usdt_pair_names:
-                    now_volume, avg_volume = binance_api.get_volume_information(top_300_futures_usdt_name)
+                    now_volume, avg_volume, klines = binance_api.get_volume_information(top_300_futures_usdt_name)
+                    klines_list.append([top_300_futures_usdt_name, klines])
                     if now_volume > avg_volume * 10:
-                        telegram_bot_sendtext("合約成交量大爆射: " + top_300_futures_usdt_name)
+                        telegram_bot_sendtext("合約成交量大爆射: " + top_300_futures_usdt_name, "主動買量:", klines[10])
                     time.sleep(0.1)
 
+                # save klines_list
+                klines_list_filename = "klines/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_contract.json'
+                with open(klines_list_filename, "w") as json_file:
+                    json.dump(klines_list, json_file, indent=4)
+            
+            # 輸出得到的資料
+            # 印出年、月、日、小時和分鐘在同一行
+            print(f"{year}年 {month}月 {day}日 {hour}：{minute}")
+            binance_json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_spot.json'
+            with open(binance_json_filename, "w") as json_file:
+                json.dump(top_300_usdt_pairs, json_file, indent=4)
+
+            binance_json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_contract.json'
+            with open(binance_json_filename, "w") as json_file:
+                json.dump(top_300_futures_usdt_pairs, json_file, indent=4)
+            
         # 檢查分鐘是否是 15 的倍數，15 分鐘更新一次
         if current_time.tm_min % 15 == 0:
             # 拿幣安合約成交量前 300 名的資料            
@@ -224,25 +260,9 @@ if __name__ == "__main__":
                 bar.update(i + 1)
             bar.finish()
 
-            # 獲取當前時間
-            current_time = datetime.datetime.now()
-            # 提取年、月、日、小時和分鐘
-            year = current_time.year
-            month = current_time.month
-            day = current_time.day
-            hour = current_time.hour
-            minute = current_time.minute
-            # 印出年、月、日、小時和分鐘在同一行
-            print(f"{year}年 {month}月 {day}日 {hour}：{minute}")
-            
-            # 輸出得到的資料
-            perp_json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_perpetual.json'
+            perp_json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_coinglass.json'
             with open(perp_json_filename, "w") as json_file:
                 json.dump(top_100_usdt_pair_informations, json_file, indent=4)
-
-            binance_json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_binance.json'
-            with open(binance_json_filename, "w") as json_file:
-                json.dump(top_300_usdt_pairs, json_file, indent=4)
 
             # 檢查資金費率
             funding_rate.analyze_funding_rate_and_report(top_100_usdt_pair_informations)

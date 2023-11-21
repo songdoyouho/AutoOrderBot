@@ -114,8 +114,6 @@ class BinanceAPI:
         # 處理 API 回應
         if response.status_code == 200:
             klines = response.json()
-            # print(len(klines))
-            # print(klines[-1])
         else:
             print(f'錯誤：{response.status_code}, {response.text}')
 
@@ -129,7 +127,7 @@ class BinanceAPI:
             now_volume = float(klines[-1][7])
             print(avg_volume, now_volume)
 
-        return now_volume, avg_volume
+        return now_volume, avg_volume, klines
 
     def get_future_volume_information(self, symbol):
         ''' 獲取某段時間區間內的 K 棒資料
