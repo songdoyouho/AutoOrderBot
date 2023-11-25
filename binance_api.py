@@ -172,16 +172,17 @@ class BinanceAPI:
                     total_volume += float(klines[i][7])
 
             avg_volume = total_volume / (len(klines) - 1)
-            now_volume = klines[-1][7]
+            now_volume = float(klines[-1][7])
             print(avg_volume, now_volume)
         
-        return now_volume, avg_volume
+        return now_volume, avg_volume, klines
     
 if __name__ == '__main__':
     api = BinanceAPI()
     top_300_usdt_pairs, top_300_usdt_pair_names, top_300_usdt_pair_volume, top_300_usdt_pair_pricechangepercent = api.get_top_300_pairs()
     top_300_usdt_pairs, top_300_usdt_pair_names, top_300_usdt_pair_volume, top_300_usdt_pair_pricechangepercent = api.get_top_300_futures_pairs()
-    # print(top_300_usdt_pairs[0])
-    # for top_300_usdt_name in top_300_usdt_pair_names[100:]:
-    #     api.get_future_volume_information(top_300_usdt_name)
-    #     time.sleep(0.1)
+    print(top_300_usdt_pairs[0])
+    for top_300_usdt_name in top_300_usdt_pair_names[:1]:
+        now_volume, avg_volume, klines = api.get_future_volume_information(top_300_usdt_name)
+        print(klines[0], klines[-1])
+        time.sleep(0.1)

@@ -194,8 +194,8 @@ if __name__ == "__main__":
                 for top_300_usdt_name in top_300_usdt_pair_names:
                     now_volume, avg_volume, klines = binance_api.get_volume_information(top_300_usdt_name)
                     klines_list.append([top_300_usdt_name, klines])
-                    if now_volume > avg_volume * 10:
-                        telegram_bot_sendtext("現貨成交量大爆射: " + top_300_usdt_name, "主動買量:", klines[10])
+                    if now_volume > avg_volume * 10 and float(klines[-1][10]) > 1000000:
+                        telegram_bot_sendtext("現貨成交量大爆射: " + top_300_usdt_name + "主動買量:" + str(klines[-1][10]))
                     time.sleep(0.1)
 
                 # save klines_list
@@ -211,10 +211,10 @@ if __name__ == "__main__":
 
                 klines_list = []
                 for top_300_futures_usdt_name in top_300_futures_usdt_pair_names:
-                    now_volume, avg_volume, klines = binance_api.get_volume_information(top_300_futures_usdt_name)
+                    now_volume, avg_volume, klines = binance_api.get_future_volume_information(top_300_futures_usdt_name)
                     klines_list.append([top_300_futures_usdt_name, klines])
-                    if now_volume > avg_volume * 10:
-                        telegram_bot_sendtext("合約成交量大爆射: " + top_300_futures_usdt_name, "主動買量:", klines[10])
+                    if now_volume > avg_volume * 10 and float(klines[-1][10]) > 1000000:
+                        telegram_bot_sendtext("合約成交量大爆射: " + top_300_futures_usdt_name + " 主動買量:" + str(klines[-1][10]))
                     time.sleep(0.1)
 
                 # save klines_list
