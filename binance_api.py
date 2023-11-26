@@ -33,7 +33,7 @@ class BinanceAPI:
         # 過濾出以USDT為基底的交易對
         usdt_pairs = [pair for pair in data if pair['symbol'].endswith('USDT')]
         # 要排除的穩定幣交易對列表
-        exclude_pairs = ['USDCUSDT', 'FDUSDUSDT', 'BUSDUSDT', 'TUSDUSDT', 'USDPUSDT']
+        exclude_pairs = ['USDCUSDT', 'FDUSDUSDT', 'BUSDUSDT', 'TUSDUSDT', 'USDPUSDT', 'USTCUSDT']
         # 排除指定的穩定幣交易對
         filtered_usdt_pairs = [pair for pair in usdt_pairs if pair['symbol'] not in exclude_pairs]
         # 根據交易金額（quoteVolume）對交易對進行排序
@@ -91,7 +91,25 @@ class BinanceAPI:
             end_time 結束時間
             limit 回傳上限 default 500 max 1000
         '''
-        print("processing", symbol)
+        '''  回傳內容
+        [
+            [
+                // Kline open time
+                // Open price
+                // High price
+                // Low price
+                // Close price
+                // Volume
+                // Kline Close time
+                // Quote asset volume
+                // Number of trades
+                // Taker buy base asset volume
+                // Taker buy quote asset volume
+                // Unused field, ignore.
+            ]
+        ]
+        '''
+        # print("processing", symbol)
 
         interval = '5m'  # 時間間隔，比如1小時
         start_time = int((time.time() - 87000) * 1000)  # 開始時間，格式需符合ISO 8601，time.time() 是以秒為單位，乘1000轉毫秒
@@ -125,7 +143,7 @@ class BinanceAPI:
 
             avg_volume = total_volume / (len(klines) - 1)
             now_volume = float(klines[-1][7])
-            print(avg_volume, now_volume)
+            # print(avg_volume, now_volume)
 
         return now_volume, avg_volume, klines
 
@@ -137,7 +155,7 @@ class BinanceAPI:
             end_time 結束時間
             limit 回傳上限 default 500 max 1000
         '''
-        print("processing", symbol)
+        # print("processing", symbol)
 
         interval = '5m'  # 時間間隔，比如1小時
         start_time = int((time.time() - 87000) * 1000)  # 開始時間，格式需符合ISO 8601，time.time() 是以秒為單位，乘1000轉毫秒
@@ -173,7 +191,7 @@ class BinanceAPI:
 
             avg_volume = total_volume / (len(klines) - 1)
             now_volume = float(klines[-1][7])
-            print(avg_volume, now_volume)
+            # print(avg_volume, now_volume)
         
         return now_volume, avg_volume, klines
     
@@ -184,5 +202,5 @@ if __name__ == '__main__':
     print(top_300_usdt_pairs[0])
     for top_300_usdt_name in top_300_usdt_pair_names[:1]:
         now_volume, avg_volume, klines = api.get_future_volume_information(top_300_usdt_name)
-        print(klines[0], klines[-1])
+        print(klines[-1])
         time.sleep(0.1)

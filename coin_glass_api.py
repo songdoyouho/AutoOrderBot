@@ -7,7 +7,11 @@ import progressbar
 import config
 
 total_iterations = 100
-bar = progressbar.ProgressBar(maxval=total_iterations,
+bar_for_coinglass = progressbar.ProgressBar(maxval=total_iterations,
+                              widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
+
+total_iterations = 300
+bar_for_volume = progressbar.ProgressBar(maxval=total_iterations,
                               widgets=[progressbar.Bar('=', '[', ']'), ' ', progressbar.Percentage()])
 
 class CoinglassAPI():
@@ -184,38 +188,80 @@ if __name__ == "__main__":
         minute = now_time.minute
         
         if current_time.tm_min % 5 == 0:
-            print("------------------------check top 300  ------------------------")
+            
             result = binance_api.get_top_300_pairs()
             if result is not None:
                 top_300_usdt_pairs, top_300_usdt_pair_names, top_300_usdt_pair_volume, top_300_usdt_pair_pricechangepercent = result
                 determine_top_300.compare(top_300_usdt_pair_names, top_300_usdt_pair_pricechangepercent)
 
                 klines_list = []
-                for top_300_usdt_name in top_300_usdt_pair_names:
+                print("------------------------check top 300 spots ------------------------")
+                bar_for_volume.start()
+                for j in range(len(top_300_usdt_pair_names)):
+                    top_300_usdt_name = top_300_usdt_pair_names[j]
                     now_volume, avg_volume, klines = binance_api.get_volume_information(top_300_usdt_name)
                     klines_list.append([top_300_usdt_name, klines])
                     if now_volume > avg_volume * 10 and float(klines[-1][10]) > 1000000:
                         telegram_bot_sendtext("現貨成交量大爆射: " + top_300_usdt_name + "主動買量:" + str(klines[-1][10]))
+
+                    if now_volume > avg_volume * 10:
+                        # 先讀之前的資料
+                        json_file_path = 'spot_volume_history.json'
+                        with open(json_file_path, 'r', encoding='utf-8') as file:
+                            data = json.load(file)
+
+                        # 新增這次的資訊
+                        if top_300_usdt_name in data:
+                            data[top_300_usdt_name].append([str(year) + '-' + str(month) + '-' + str(day) + ' ' + str(hour) + ':' + str(minute), klines[-1]])
+                        else:
+                            data[top_300_usdt_name] = [[str(year) + '-' + str(month) + '-' + str(day) + ' ' + str(hour) + ':' + str(minute), klines[-1]]]
+
+                        with open(json_file_path, 'w', encoding='utf-8') as file:
+                            json.dump(data, file, indent=4)
+
                     time.sleep(0.1)
+                    bar_for_volume.update(j + 1)
+                bar_for_volume.finish()
 
                 # save klines_list
                 klines_list_filename = "klines/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_spot.json'
                 with open(klines_list_filename, "w") as json_file:
                     json.dump(klines_list, json_file, indent=4)
 
-            print("------------------------check top 300 futures ------------------------")
+            
             result = binance_api.get_top_300_futures_pairs()
             if result is not None:
                 top_300_futures_usdt_pairs, top_300_futures_usdt_pair_names, top_300_futures_usdt_pair_volume, top_300_futures_usdt_pair_pricechangepercent = result
                 determine_top_300_futures.compare(top_300_futures_usdt_pair_names, top_300_futures_usdt_pair_pricechangepercent)
 
                 klines_list = []
-                for top_300_futures_usdt_name in top_300_futures_usdt_pair_names:
+                print("------------------------check top 300 perpetuals ------------------------")
+                bar_for_volume.start()
+                for j in range(len(top_300_futures_usdt_pair_names)):
+                    top_300_futures_usdt_name = top_300_futures_usdt_pair_names[j]
                     now_volume, avg_volume, klines = binance_api.get_future_volume_information(top_300_futures_usdt_name)
                     klines_list.append([top_300_futures_usdt_name, klines])
                     if now_volume > avg_volume * 10 and float(klines[-1][10]) > 1000000:
                         telegram_bot_sendtext("合約成交量大爆射: " + top_300_futures_usdt_name + " 主動買量:" + str(klines[-1][10]))
+
+                    if now_volume > avg_volume * 10:
+                        # 先讀之前的資料
+                        json_file_path = 'perpetual_volume_history.json'
+                        with open(json_file_path, 'r', encoding='utf-8') as file:
+                            data = json.load(file)
+
+                        # 新增這次的資訊
+                        if top_300_futures_usdt_name in data:
+                            data[top_300_futures_usdt_name].append([str(year) + '-' + str(month) + '-' + str(day) + ' ' + str(hour) + ':' + str(minute), klines[-1]])
+                        else:
+                            data[top_300_futures_usdt_name] = [[str(year) + '-' + str(month) + '-' + str(day) + ' ' + str(hour) + ':' + str(minute), klines[-1]]]
+
+                        with open(json_file_path, 'w', encoding='utf-8') as file:
+                            json.dump(data, file, indent=4)
+
                     time.sleep(0.1)
+                    bar_for_volume.update(j + 1)
+                bar_for_volume.finish()
 
                 # save klines_list
                 klines_list_filename = "klines/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_contract.json'
@@ -241,7 +287,7 @@ if __name__ == "__main__":
             # 拿這些幣的合約資料
             top_100_usdt_pair_informations = {} 
             print("get top 100 usdt pairs...")
-            bar.start()
+            bar_for_coinglass.start()
             for i in range(len(top_100_usdt_pair_names)):
                 pair = top_100_usdt_pair_names[i]
 
@@ -257,8 +303,8 @@ if __name__ == "__main__":
                 except:
                     pass
 
-                bar.update(i + 1)
-            bar.finish()
+                bar_for_coinglass.update(i + 1)
+            bar_for_coinglass.finish()
 
             perp_json_filename = "data/" + str(year) + '_' + str(month) + '_' + str(day) + '_' + str(hour) + '_' + str(minute) + '_coinglass.json'
             with open(perp_json_filename, "w") as json_file:
