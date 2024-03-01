@@ -5,3 +5,6 @@ Private_key
 *.drawio
 *__pycache__
 data
+klines
+perpetual_volume_history.json
+spot_volume_history.json
